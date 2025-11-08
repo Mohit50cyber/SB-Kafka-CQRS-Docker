@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  product-command-service:
+    image: productcommand
+    container_name: product-command
+    build:
+      context: ./ProductCommand
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    volumes:
+      - productcommand:/data
+    networks:
+      - micro-net
+
+  product-query-service:
+    image: productquery
+    container_name: product-query
+    build:
+      context: ./ProductQuery
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    volumes:
+      - productquery:/data
+    networks:
+      - micro-net
+
+  user-service:
+    image: userservice
+    container_name: user-service
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    volumes:
+      - userservice:/data
+    networks:
+      - micro-net
+
+volumes:
+  productcommand:
+  productquery:
+  userservice:
+
+networks:
+  micro-net:
+    driver: bridge
