@@ -4,9 +4,15 @@ import com.ProductQuery.entity.Product;
 import com.ProductQuery.exceptions.ResourceNotFoundException;
 import com.ProductQuery.repo.ProductRepo;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +22,9 @@ import java.util.Map;
 @Slf4j
 @Service
 public class ProductQueryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductQueryService.class);
+
 
     @Autowired
     private ProductRepo productRepo;
@@ -27,6 +36,7 @@ public class ProductQueryService {
         return productRepo.findAll();
     }
 
+    @RetryableTopic(attempts = "4")
     @KafkaListener(
             topics = "product-event-topic",
             groupId = "product-event-group"
@@ -100,6 +110,11 @@ public class ProductQueryService {
     public Product getProductById(Long id) {
         return productRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+    }
+
+    @DltHandler
+    public void listenDLT(Product product , @Header(KafkaHeaders.RECEIVED_TOPIC) String topic){
+        logger.info("DLT Received : {} , from {} ,offset {} ",product.getName(),topic );
     }
 
 }
